@@ -2,7 +2,7 @@ name: AWS Test
 
 on:
   push:
-    - feature/iotpipe
+    branches: [feature/iotpipe]
 
 jobs:
   test:
