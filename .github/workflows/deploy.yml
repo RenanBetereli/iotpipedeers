@@ -24,4 +24,4 @@ jobs:
 
       - name: test deploy read file.
         run: |
-          aws cp files/read.txt s3://jdf-data-lake-renan/new_deploy/read.txt
+          aws s3 cp files/read.txt s3://jdf-data-lake-renan/new_deploy/read.txt
