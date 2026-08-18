@@ -1,7 +1,8 @@
 name: AWS Test
 
 on:
-  workflow_dispatch:
+  push:
+    - feature/iotpipe
 
 jobs:
   test:
