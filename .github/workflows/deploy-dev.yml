@@ -30,8 +30,7 @@ jobs:
         run: |
           echo "Deploying Stack for Lambda"
 
-          aws cloudformation deploy 
-            --stack-name supabase_connector_stack \
+          aws cloudformation deploy --stack-name supabase_connector_stack \
             --template-file templates/supabaseConnectorV2.yml \
             --no-fail-on-empty-changeset \
             --parameter-overrides $(jq -r '.[] | [.ParameterKey,.ParameterValue] | join("=")' parameters/param-dev.json)
