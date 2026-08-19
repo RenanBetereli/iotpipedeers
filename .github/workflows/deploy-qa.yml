@@ -1,0 +1,44 @@
+name: AWS Test
+
+on:
+  push:
+    branches: [feature/iotpipe]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Test AWS Connection
+        run: aws sts get-caller-identity
+
+      - name: test deploy read file.
+        run: |
+          aws s3 cp files/read.txt s3://jdf-data-lake-renan/new_deploy/read.txt
+
+
+          # Deploy da Lambda 1: supabaseConnectorV2
+      - name: Deploy Supabase Connector Lambda
+        run: |
+          zip -j supabase_lambda.zip supabaseConnectorV2.py
+          aws lambda update-function-code \
+            --function-name supabaseConnectorV2 \
+            --zip-file fileb://supabase_lambda.zip
+
+      # Deploy da Lambda 2: telemetryEntryPointV2
+      - name: Deploy Telemetry Entry Point Lambda
+        run: |
+          zip -j telemetry_lambda.zip telemetryEntryPointV2.py
+          aws lambda update-function-code \
+            --function-name telemetryEntryPointV2 \
+            --zip-file fileb://telemetry_lambda.zip
