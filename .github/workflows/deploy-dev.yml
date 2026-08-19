@@ -26,23 +26,25 @@ jobs:
         run: |
           aws s3 cp files/read.txt s3://jdf-data-lake-renan/new_deploy/read.txt
 
-      - name: Deploy  Lambda lambda_name_here
+      - name: Deploy Lambda Supabase Connector
         run: |
           echo "Deploying Stack for Lambda"
 
+          # 1. CloudFormation Deploy com a permissão de IAM adicionada
           aws cloudformation deploy \
             --stack-name supabase-connector-stack-dev \
             --template-file templates/supabaseConnectorV2.yml \
             --no-fail-on-empty-changeset \
+            --capabilities CAPABILITY_NAMED_IAM \
             --parameter-overrides $(jq -r '.[] | [.ParameterKey,.ParameterValue] | join("=")' parameters/param-dev.json)
 
-          # 2. Captura a variável ENVIRONMENT enquanto está no diretório raiz
+          # 2. Captura a variável ENVIRONMENT
           ENVIRONMENT=$(jq -r '.[] | select(.ParameterKey=="Environment") | .ParameterValue' parameters/param-dev.json)
 
-          # 3. Compacta o arquivo apontando para o caminho correto na subpasta
+          # 3. Compacta o arquivo apontando para o caminho correto
           zip -j supabaseconnectorzip.zip scripts/supabase-connector/supabaseConnectorV2.py
 
-          # 4. Atualiza o código da Lambda na AWS
+          # 4. Atualiza o código da Lambda
           aws lambda update-function-code \
             --function-name supabaseConnectorV2-${ENVIRONMENT}-lf \
             --zip-file fileb://supabaseconnectorzip.zip

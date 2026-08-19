@@ -2,7 +2,7 @@ name: AWS Test
 
 on:
   push:
-    #branches: [feature/iotpipe]
+    branches: [feature/iotpipe-qa]
 
 jobs:
   test:
