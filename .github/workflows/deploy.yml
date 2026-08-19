@@ -40,5 +40,5 @@ jobs:
         run: |
           zip -j telemetry_lambda.zip telemetryEntryPointV2.py
           aws lambda update-function-code \
-            --function-name telemetriEntryPointV2 \
+            --function-name telemetryEntryPointV2 \
             --zip-file fileb://telemetry_lambda.zip
