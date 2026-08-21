@@ -22,10 +22,6 @@ jobs:
       - name: Test AWS Connection
         run: aws sts get-caller-identity
 
-      - name: test deploy read file.
-        run: |
-          aws s3 cp files/read.txt s3://jdf-data-lake-renan/new_deploy/read.txt
-
       # Deploy da infraestrutura (IaC) da Lambda 1: supabaseConnectorV2
       - name: Deploy Supabase Connector Stack (CloudFormation - dev)
         run: |
@@ -44,10 +40,20 @@ jobs:
             --function-name supabaseConnectorV2-dev \
             --zip-file fileb://supabase_lambda.zip
 
+      # Deploy da infraestrutura (IaC) da Lambda 2: telemetryEntryPointV2
+      - name: Deploy Telemetry Entry Point Stack (CloudFormation - dev)
+        run: |
+          PARAMS=$(jq -r '.[] | "\(.ParameterKey)=\(.ParameterValue)"' parameters/param-dev.json | tr '\n' ' ')
+          aws cloudformation deploy \
+            --stack-name telemetryEntryPointV2-dev \
+            --template-file templates/telemetryEntryPointV2.yml \
+            --parameter-overrides $PARAMS SnsTopicArn="${{ secrets.SNS_TOPIC_ARN }}" \
+            --capabilities CAPABILITY_NAMED_IAM
+
       # Deploy da Lambda 2: telemetryEntryPointV2
       - name: Deploy Telemetry Entry Point Lambda
         run: |
-          zip -j telemetry_lambda.zip telemetryEntryPointV2.py
+          zip -j telemetry_lambda.zip scripts/telemetry-entry-point/telemetryEntryPointV2.py
           aws lambda update-function-code \
-            --function-name telemetryEntryPointV2 \
+            --function-name telemetryEntryPointV2-dev \
             --zip-file fileb://telemetry_lambda.zip

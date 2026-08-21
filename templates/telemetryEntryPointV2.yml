@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Lambda Template
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - dev
+      - qa
+      - prod
+    Description: Ambiente de deploy
+
+  DataLakeBucketName:
+    Type: String
+    Default: jdf-data-lake-renan
+    Description: Bucket S3 onde a telemetria recebida e' gravada
+
+  BasePrefix:
+    Type: String
+    Default: landing
+    Description: Prefixo (pasta) do S3 onde a telemetria e' gravada
+
+  SnsTopicArn:
+    Type: String
+    Default: ""
+    Description: ARN do topico SNS usado para alertas de FAIL (vazio desabilita o alerta)
+
+Resources:
+  MyLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "telemetryEntryPointV2-${Environment}"
+      Runtime: python3.12
+      Handler: telemetryEntryPointV2.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 60
+      Environment:
+        Variables:
+          S3_BUCKET_NAME: !Ref DataLakeBucketName
+          BASE_PREFIX: !Ref BasePrefix
+          SNS_TOPIC_ARN: !Ref SnsTopicArn
+
+      Code:
+        ZipFile: |
+          def lambda_handler(event, context):
+              return {
+                  "statusCode": 200,
+                  "body": "Hello World"
+              }
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "telemetryEntryPointV2-${Environment}"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+      Policies:
+        - PolicyName: WriteDataLakeObjects
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource: !Sub "arn:aws:s3:::${DataLakeBucketName}/*"
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref SnsTopicArn
+
+Outputs:
+  LambdaName:
+    Value: !Ref MyLambda
