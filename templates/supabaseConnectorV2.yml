@@ -11,15 +11,28 @@ Parameters:
       - prod
     Description: Ambiente de deploy
 
+  DatabaseUrl:
+    Type: String
+    NoEcho: true
+    Description: Connection string do Supabase/Postgres (injetada via secret do GitHub Actions)
+
+  DataLakeBucketName:
+    Type: String
+    Default: jdf-data-lake-renan
+    Description: Bucket S3 de origem dos eventos processados pela Lambda
+
 Resources:
   MyLambda:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "supabaseConnectorV2-${Environment}"
       Runtime: python3.12
-      Handler: lambda_function.lambda_handler
+      Handler: supabaseConnectorV2.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Timeout: 60
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref DatabaseUrl
 
       Code:
         ZipFile: |
@@ -45,6 +58,16 @@ Resources:
 
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+      Policies:
+        - PolicyName: ReadDataLakeObjects
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub "arn:aws:s3:::${DataLakeBucketName}/*"
 
 Outputs:
   LambdaName:

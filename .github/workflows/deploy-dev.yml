@@ -1,4 +1,4 @@
-name: AWS Test
+name: AWS Deploy - Dev
 
 on:
   push:
@@ -26,25 +26,28 @@ jobs:
         run: |
           aws s3 cp files/read.txt s3://jdf-data-lake-renan/new_deploy/read.txt
 
-      - name: Deploy Lambda Supabase Connector
+      # Deploy da infraestrutura (IaC) da Lambda 1: supabaseConnectorV2
+      - name: Deploy Supabase Connector Stack (CloudFormation - dev)
         run: |
-          echo "Deploying Stack for Lambda"
-
-          # 1. CloudFormation Deploy com a permissão de IAM adicionada
+          PARAMS=$(jq -r '.[] | "\(.ParameterKey)=\(.ParameterValue)"' parameters/param-dev.json | tr '\n' ' ')
           aws cloudformation deploy \
-            --stack-name supabase-connector-stack-dev \
+            --stack-name supabaseConnectorV2-dev \
             --template-file templates/supabaseConnectorV2.yml \
-            --no-fail-on-empty-changeset \
-            --capabilities CAPABILITY_NAMED_IAM \
-            --parameter-overrides $(jq -r '.[] | [.ParameterKey,.ParameterValue] | join("=")' parameters/param-dev.json)
+            --parameter-overrides $PARAMS DatabaseUrl="${{ secrets.SUPABASE_DATABASE_URL }}" \
+            --capabilities CAPABILITY_NAMED_IAM
 
-          # 2. Captura a variável ENVIRONMENT
-          ENVIRONMENT=$(jq -r '.[] | select(.ParameterKey=="Environment") | .ParameterValue' parameters/param-dev.json)
-
-          # 3. Compacta o arquivo apontando para o caminho correto
-          zip -j supabaseconnectorzip.zip scripts/supabase-connector/supabaseConnectorV2.py
-
-          # 4. Atualiza o código da Lambda
+      # Deploy da Lambda 1: supabaseConnectorV2
+      - name: Deploy Supabase Connector Lambda
+        run: |
+          zip -j supabase_lambda.zip scripts/supabase-connector/supabaseConnectorV2.py
           aws lambda update-function-code \
-            --function-name supabaseConnectorV2-${ENVIRONMENT}-lf \
-            --zip-file fileb://supabaseconnectorzip.zip
+            --function-name supabaseConnectorV2-dev \
+            --zip-file fileb://supabase_lambda.zip
+
+      # Deploy da Lambda 2: telemetryEntryPointV2
+      - name: Deploy Telemetry Entry Point Lambda
+        run: |
+          zip -j telemetry_lambda.zip telemetryEntryPointV2.py
+          aws lambda update-function-code \
+            --function-name telemetryEntryPointV2 \
+            --zip-file fileb://telemetry_lambda.zip
