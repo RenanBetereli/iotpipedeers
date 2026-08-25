@@ -22,34 +22,27 @@ jobs:
       # Deploy da infraestrutura (IaC) da Lambda 1: supabaseConnectorV2
       - name: Deploy Supabase Connector Stack (CloudFormation - dev)
         run: |
-          PARAMS=$(jq -r '.[] | "\(.ParameterKey)=\(.ParameterValue)"' parameters/param-dev.json | tr '\n' ' ')
-          aws cloudformation deploy \
-            --stack-name supabaseConnectorV2-dev \
-            --template-file templates/supabaseConnectorV2.yml \
-            --parameter-overrides $PARAMS DatabaseUrl="${{ secrets.SUPABASE_DATABASE_URL }}" \
+          aws cloudformation deploy --stack-name supabaseConnectorV2-dev-stack \
+            --template-file templates/supabaseConnectorV2.yml --no-fail-on-empty-changeset \
+            --parameter-overrides $(jq -r '.[] | [.ParameterKey, .ParameterValue] | "\(.[0])=\(.[1])"' parameters/param-dev.json ) 
+          cd scripts/supabase-connector/
+          zip -r supconnector.zip .
+          aws lambda update-function-code --function-name supabaseConnectorV2-dev --zip-file=fileb://supconnector.zip
 
-
-      # Deploy da Lambda 1: supabaseConnectorV2
-      - name: Deploy Supabase Connector Lambda
-        run: |
-          zip -j supabase_lambda.zip scripts/supabase-connector/supabaseConnectorV2.py
-          aws lambda update-function-code \
-            --function-name supabaseConnectorV2-dev \
-            --zip-file fileb://supabase_lambda.zip
 
       # Deploy da infraestrutura (IaC) da Lambda 2: telemetryEntryPointV2
-      - name: Deploy Telemetry Entry Point Stack (CloudFormation - dev)
-        run: |
-          PARAMS=$(jq -r '.[] | "\(.ParameterKey)=\(.ParameterValue)"' parameters/param-dev.json | tr '\n' ' ')
-          aws cloudformation deploy \
-            --stack-name telemetryEntryPointV2-dev \
-            --template-file templates/telemetryEntryPointV2.yml \
-            --parameter-overrides $PARAMS SnsTopicArn="${{ secrets.SNS_TOPIC_ARN }}" \
+      #- name: Deploy Telemetry Entry Point Stack (CloudFormation - dev)
+      #  run: |
+      #    PARAMS=$(jq -r '.[] | "\(.ParameterKey)=\(.ParameterValue)"' parameters/param-dev.json | tr '\n' ' ')
+      #    aws cloudformation deploy \
+      #      --stack-name telemetryEntryPointV2-dev \
+      #      --template-file templates/telemetryEntryPointV2.yml \
+      #      --parameter-overrides $PARAMS SnsTopicArn="${{ secrets.SNS_TOPIC_ARN }}" \
 
       # Deploy da Lambda 2: telemetryEntryPointV2
-      - name: Deploy Telemetry Entry Point Lambda
-        run: |
-          zip -j telemetry_lambda.zip scripts/telemetry-entry-point/telemetryEntryPointV2.py
-          aws lambda update-function-code \
-            --function-name telemetryEntryPointV2-dev \
-            --zip-file fileb://telemetry_lambda.zip
+      #- name: Deploy Telemetry Entry Point Lambda
+      #  run: |
+      #    zip -j telemetry_lambda.zip scripts/telemetry-entry-point/telemetryEntryPointV2.py
+      #    aws lambda update-function-code \
+      #      --function-name telemetryEntryPointV2-dev \
+      #      --zip-file fileb://telemetry_lambda.zip
