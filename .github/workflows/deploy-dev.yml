@@ -19,9 +19,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Test AWS Connection
-        run: aws sts get-caller-identity
-
       # Deploy da infraestrutura (IaC) da Lambda 1: supabaseConnectorV2
       - name: Deploy Supabase Connector Stack (CloudFormation - dev)
         run: |
@@ -30,7 +27,7 @@ jobs:
             --stack-name supabaseConnectorV2-dev \
             --template-file templates/supabaseConnectorV2.yml \
             --parameter-overrides $PARAMS DatabaseUrl="${{ secrets.SUPABASE_DATABASE_URL }}" \
-            --capabilities CAPABILITY_NAMED_IAM
+
 
       # Deploy da Lambda 1: supabaseConnectorV2
       - name: Deploy Supabase Connector Lambda
@@ -48,7 +45,6 @@ jobs:
             --stack-name telemetryEntryPointV2-dev \
             --template-file templates/telemetryEntryPointV2.yml \
             --parameter-overrides $PARAMS SnsTopicArn="${{ secrets.SNS_TOPIC_ARN }}" \
-            --capabilities CAPABILITY_NAMED_IAM
 
       # Deploy da Lambda 2: telemetryEntryPointV2
       - name: Deploy Telemetry Entry Point Lambda
