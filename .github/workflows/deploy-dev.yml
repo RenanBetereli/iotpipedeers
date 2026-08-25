@@ -24,7 +24,8 @@ jobs:
         run: |
           aws cloudformation deploy --stack-name supabaseConnectorV2-dev-stack \
             --template-file templates/supabaseConnectorV2.yml --no-fail-on-empty-changeset \
-            --parameter-overrides $(jq -r '.[] | [.ParameterKey, .ParameterValue] | "\(.[0])=\(.[1])"' parameters/param-dev.json ) 
+            --parameter-overrides $(jq -r '.[] | [.ParameterKey, .ParameterValue] | "\(.[0])=\(.[1])"' parameters/param-dev.json ) \
+            --capabilities CAPABILITY_NAMED_IAM
           cd scripts/supabase-connector/
           zip -r supconnector.zip .
           aws lambda update-function-code --function-name supabaseConnectorV2-dev --zip-file=fileb://supconnector.zip
