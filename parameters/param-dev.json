@@ -2,5 +2,13 @@
   {
     "ParameterKey": "Environment",
     "ParameterValue": "dev"
+  },
+  {
+    "ParameterKey": "DatabaseUrl",
+    "ParameterValue": "url-valid-here"
+  },
+  {
+    "ParameterKey": "DataLakeBucketName",
+    "ParameterValue": "jdf-data-lake-renan"
   }
 ]
