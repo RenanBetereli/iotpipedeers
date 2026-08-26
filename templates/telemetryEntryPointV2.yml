@@ -10,6 +10,13 @@ Parameters:
       - prod
     Description: Ambiente de deploy
 
+  # Aceito apenas para manter o mesmo parameters/param-dev.json usado pela stack supabaseConnectorV2; não utilizado por esta lambda
+  DatabaseUrl:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Não utilizado por esta stack (presente apenas por compartilhar o arquivo de parâmetros com supabaseConnectorV2)
+
   DataLakeBucketName:
     Type: String
     Default: jdf-data-lake-renan
@@ -20,10 +27,14 @@ Parameters:
     Default: landing
     Description: Prefixo (pasta) do S3 onde a telemetria e' gravada
 
+
   SnsTopicArn:
     Type: String
     Default: ""
     Description: ARN do topico SNS usado para alertas de FAIL (vazio desabilita o alerta)
+
+Conditions:
+  HasSnsTopic: !Not [!Equals [!Ref SnsTopicArn, ""]]
 
 Resources:
   MyLambda:
@@ -74,10 +85,17 @@ Resources:
                 Action:
                   - s3:PutObject
                 Resource: !Sub "arn:aws:s3:::${DataLakeBucketName}/*"
-              - Effect: Allow
-                Action:
-                  - sns:Publish
-                Resource: !Ref SnsTopicArn
+        - !If
+          - HasSnsTopic
+          - PolicyName: PublishFailAlerts
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - sns:Publish
+                  Resource: !Ref SnsTopicArn
+          - !Ref "AWS::NoValue"
 
 Outputs:
   LambdaName:
