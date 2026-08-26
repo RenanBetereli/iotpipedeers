@@ -32,14 +32,16 @@ jobs:
 
 
       # Deploy da infraestrutura (IaC) da Lambda 2: telemetryEntryPointV2
-      #- name: Deploy Telemetry Entry Point Stack (CloudFormation - dev)
-      #  run: |
-      #    PARAMS=$(jq -r '.[] | "\(.ParameterKey)=\(.ParameterValue)"' parameters/param-dev.json | tr '\n' ' ')
-      #    aws cloudformation deploy \
-      #      --stack-name telemetryEntryPointV2-dev \
-      #      --template-file templates/telemetryEntryPointV2.yml \
-      #      --parameter-overrides $PARAMS SnsTopicArn="${{ secrets.SNS_TOPIC_ARN }}" \
-
+      - name: Deploy Telemetry Entry Point Stack (CloudFormation - dev)
+        run: |
+          aws cloudformation deploy --stack-name telemetryEntryPointV2-dev-stack \
+            --template-file templates/telemetryEntryPointV2.yml --no-fail-on-empty-changeset \
+            --parameter-overrides $(jq -r '.[] | [.ParameterKey, .ParameterValue] | "\(.[0])=\(.[1])"' parameters/param-dev.json ) \
+            --capabilities CAPABILITY_NAMED_IAM
+          cd scripts/telemetry-entry-point/
+          zip -r telemetry_lambda.zip .
+          aws lambda update-function-code --function-name telemetryEntryPointV2-dev --zip-file=fileb://telemetry_lambda.zip
+          
       # Deploy da Lambda 2: telemetryEntryPointV2
       #- name: Deploy Telemetry Entry Point Lambda
       #  run: |
