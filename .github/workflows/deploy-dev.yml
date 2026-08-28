@@ -42,10 +42,4 @@ jobs:
           zip -r telemetry_lambda.zip .
           aws lambda update-function-code --function-name telemetryEntryPointV2-dev --zip-file=fileb://telemetry_lambda.zip
           
-      # Deploy da Lambda 2: telemetryEntryPointV2
-      #- name: Deploy Telemetry Entry Point Lambda
-      #  run: |
-      #    zip -j telemetry_lambda.zip scripts/telemetry-entry-point/telemetryEntryPointV2.py
-      #    aws lambda update-function-code \
-      #      --function-name telemetryEntryPointV2-dev \
-      #      --zip-file fileb://telemetry_lambda.zip
+     
